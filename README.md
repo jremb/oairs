@@ -112,9 +112,11 @@ Other crates I relied heavily upon:
 
 And the following crates which made adding certain things much easier: [`nom`](<https://github.com/rust-bakery/nom>), [`polars`](<https://github.com/pola-rs/polars>)
 
-## Excurses On returning `reqwest::Response`
+## Excurses
 
 This was a personal project that I've used to try and learn Rust. I haven't focused on speed, but making the library easy to use. Nor do I have the general experience or specific Rust knowledge to know much about optimization. Thus, it may (or may not) be slower than other similar libraries. Along the lines of ease-of-use, I've tried to provide a lot of convenience methods (and plan to add more). Thus, I haven't taken much time to ask myself "Should this be left to the user?" or stuck only to creating an interface for the endpoints. And so it may (or may not) be larger than other similar libraries. Additionally, Rust being a new language for me, it will almost certainly fail to be idiomatic in places. And finally, due to the compounding factors of it being a project in its early stages and my ignorance, the updates will probably often involve breaking changes.
+
+### On returning `reqwest::Response`
 
 Initially I made the return type of every request the appropriate struct from a deserialized response. To make it easier to debug issues and get a better grasp of which fields I could expect from a response (which wasn't always obvious from the API documentation) I switched over to always returning the `reqwest::Response`. An error would only be returned in the case that `reqwest` itself failed. I ultimately decided to stick with this basic idea because it allows the macros handling the various send methods to be somewhat simplified and also gives users the option to have more information about the response if they want it (e.g., checking headers for rate-limits).
 
