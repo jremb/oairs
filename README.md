@@ -9,6 +9,8 @@ Endpoints not currently covered:
 * <https://api.openai.com/v1/audio/transcription> (create transcription)
 * <https://api.openai.com/v1/audio/translations> (Create translation)
 
+Currently only tested on Windows.
+
 ## Use
 
 The main point of entry for working with the API is the `Client` struct. The typical initialization is intended to be as follows:
