@@ -205,6 +205,19 @@ pub fn tokenize(text: &str, tokenizer: Tokenizer) -> Result<Vec<usize>, OairsErr
     }
 }
 
+pub fn tokenize_batch(
+    texts: Vec<&str>,
+    tokenizer: Tokenizer,
+) -> Result<Vec<Vec<usize>>, OairsError> {
+    match load_bpe(tokenizer) {
+        Ok(bpe) => {
+            let tokens = bpe.encode_ordinary_batch(texts);
+            Ok(tokens)
+        }
+        Err(e) => Err(e),
+    }
+}
+
 /// Calls the `encode` method of the `CoreBPE` struct.
 ///
 /// If you have no special tokens (e.g., `<|endoftext|>`), it makes no practical
@@ -310,5 +323,28 @@ mod tokenizer_tests {
         ];
 
         assert_eq!(tokens, expected_tokens)
+    }
+
+    #[test]
+    fn tokens_t3() {
+        let strings = vec![
+            "This is a test string to see how it tokenizes.",
+            "The one who shuts his ears to the cry of the poor will himself also call out and not be answered.",
+            "hello world",
+        ];
+
+        let tokens = tokenize_batch(strings, Tokenizer::CL100KBase).unwrap();
+        let expected = vec![
+            vec![
+                2028, 374, 264, 1296, 925, 311, 1518, 1268, 433, 4037, 4861, 13,
+            ],
+            vec![
+                791, 832, 889, 89678, 813, 25212, 311, 279, 16106, 315, 279, 8009, 690, 5678, 1101,
+                1650, 704, 323, 539, 387, 19089, 13,
+            ],
+            vec![15339, 1917],
+        ];
+
+        assert_eq!(tokens, expected)
     }
 }

@@ -36,7 +36,7 @@ pub fn load_parquet(path: &PathBuf) -> Result<DataFrame, OairsError> {
     }
 }
 
-/// Convert a [`Response`](https://docs.rs/reqwest/0.11.14/reqwest/struct.Response.html) that 
+/// Convert a [`Response`](https://docs.rs/reqwest/0.11.14/reqwest/struct.Response.html) that
 /// is the result of a [`retrieve_file_content`](crate::client::Client::retrieve_file_content)
 /// request into a [`DataFrame`](https://docs.rs/polars/0.27.2/polars/prelude/struct.DataFrame.html).
 pub async fn df_from_response(response: reqwest::Response) -> Result<DataFrame, OairsError> {

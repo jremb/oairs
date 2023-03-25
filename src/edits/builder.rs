@@ -1,3 +1,5 @@
+use crate::client::{handle_request, HttpMethod};
+
 use super::*;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -59,6 +61,9 @@ impl EditBuilder<Sendable> {
         self.top_p = Some(top_p);
         self
     }
-}
 
-impl_post!(EditBuilder<Sendable>, ContentType::Json);
+    pub async fn send(&self) -> Result<reqwest::Response, OairsError> {
+        let json = serde_json::to_value(self).unwrap();
+        handle_request(&self.key, &self.url, HttpMethod::Post, Some(json), None).await
+    }
+}

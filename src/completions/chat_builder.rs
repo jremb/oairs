@@ -1,14 +1,17 @@
 use serde::ser::SerializeSeq;
 
 use super::{response::ChatCompletion, *};
-use crate::tokenizers::{tokenize, Tokenizer};
+use crate::{
+    client::{handle_request, HttpMethod},
+    tokenizers::{tokenize, Tokenizer},
+};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct ChatBuilder<Buildable> {
     #[serde(skip)]
     key: String,
     #[serde(skip)]
-    url: &'static str,
+    url: String,
     model: ChatModel,
     messages: Messages,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -40,7 +43,7 @@ impl ChatBuilder<Buildable> {
     {
         ChatBuilder {
             key: key.into(),
-            url: URL.get(&Uri::ChatCompletion).unwrap(),
+            url: chat_completion_url().to_string(),
             model,
             messages: msgs.to_owned(),
             n: 1,
@@ -199,9 +202,12 @@ impl ChatBuilder<Sendable> {
         self.user = Some(user);
         self
     }
-}
 
-impl_post!(ChatBuilder<Sendable>, ContentType::Json);
+    pub async fn send(&self) -> Result<reqwest::Response, OairsError> {
+        let json = serde_json::to_value(self).unwrap();
+        handle_request(&self.key, &self.url, HttpMethod::Post, Some(json), None).await
+    }
+}
 
 // TODO: Implement this
 // impl ChatBuilder<Sendable> {
@@ -267,7 +273,7 @@ impl Role {
     /// // b"{\"role\":\"assistant\"}" from an API stream
     /// let slice = ...;
     /// let (input, role) = nom_role(slice)?;
-    /// let role = Role::from_utf8(role)?;
+    /// let role = Role::from_slice(role)?;
     ///
     /// assert_eq!(role, Role::Assistant);
     /// ```
@@ -398,6 +404,7 @@ impl Msg {
         }
     }
 
+    /// Assumes no special tokens.
     pub fn tokens(&self) -> Result<Vec<usize>, OairsError> {
         match self {
             Msg::Assistant(s) => tokenize(s, Tokenizer::CL100KBase),

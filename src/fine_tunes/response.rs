@@ -64,7 +64,7 @@ impl FineTunesList {
     }
 }
 
-/// Struct for deserializing a [`Response`](reqwest::Response) from a request to list 
+/// Struct for deserializing a [`Response`](reqwest::Response) from a request to list
 /// fine-tune events.
 #[derive(Debug, Serialize, Deserialize, SaveJson)]
 pub struct EventList {

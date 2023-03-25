@@ -7,6 +7,8 @@ use std::thread;
 use anyhow::anyhow;
 use anyhow::Result;
 use fancy_regex::Regex;
+use rayon::prelude::IntoParallelIterator;
+use rayon::prelude::ParallelIterator;
 use rustc_hash::FxHashMap as HashMap;
 
 fn _byte_pair_merge<T>(
@@ -449,8 +451,26 @@ impl CoreBPE {
         self._encode_ordinary_native(text)
     }
 
+    pub fn encode_ordinary_batch(&self, texts: Vec<&str>) -> Vec<Vec<usize>> {
+        texts
+            .into_par_iter()
+            .map(|t| self._encode_ordinary_native(t))
+            .collect()
+    }
+
     pub fn encode(&self, text: &str, allowed_special: HashSet<&str>) -> Vec<usize> {
         self._encode_native(text, &allowed_special).0
+    }
+
+    pub fn encode_batch(
+        &self,
+        texts: Vec<&str>,
+        allowed_special: HashSet<&str>,
+    ) -> Vec<Vec<usize>> {
+        texts
+            .into_par_iter()
+            .map(|t| self._encode_native(t, &allowed_special).0)
+            .collect()
     }
 
     pub fn encode_with_special_tokens(&self, text: &str) -> Vec<usize> {
@@ -481,7 +501,6 @@ impl CoreBPE {
         pattern: &str,
     ) -> Result<CoreBPE, fancy_regex::Error> {
         let regex = Regex::new(pattern)?;
-        //.map_err(|e| PyErr::new::<exceptions::PyValueError, _>(e.to_string()))?;
 
         let special_regex = {
             let _parts = special_tokens_encoder
@@ -489,7 +508,6 @@ impl CoreBPE {
                 .map(|s| fancy_regex::escape(s))
                 .collect::<Vec<_>>();
             Regex::new(&_parts.join("|"))?
-            //.map_err(|e| PyErr::new::<exceptions::PyValueError, _>(e.to_string()))?
         };
 
         let decoder: HashMap<usize, Vec<u8>> =
@@ -503,7 +521,7 @@ impl CoreBPE {
             .collect();
 
         // Clone because I don't know how to tell Rust I'm not going to change the map
-        // TODO: OAIRS COMMENT :: used by `_encode_unstable_native` and `token_byte_values` (where I think it was being copied to pyobject anyway?)
+        // TODO: jremb :: used by `_encode_unstable_native` and `token_byte_values` (where I think it was being copied to pyobject anyway?)
         let mut sorted_token_bytes: Vec<Vec<u8>> = encoder.keys().cloned().collect();
         sorted_token_bytes.sort();
 

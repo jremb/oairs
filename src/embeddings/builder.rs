@@ -1,5 +1,7 @@
 //! Contains the [`EmbeddingBuilder`] struct.
 
+use crate::client::handle_request;
+
 use super::*;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -36,6 +38,16 @@ impl<'a, Sendable> EmbeddingBuilder<Sendable> {
         self.user = Some(user.into());
         self
     }
-}
 
-impl_post!(EmbeddingBuilder<Sendable>, ContentType::Json);
+    pub async fn send(&self) -> Result<reqwest::Response, OairsError> {
+        let json = serde_json::to_value(self).unwrap();
+        handle_request(
+            &self.key,
+            &self.url,
+            client::HttpMethod::Post,
+            Some(json),
+            None,
+        )
+        .await
+    }
+}

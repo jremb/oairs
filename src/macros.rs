@@ -1,8 +1,6 @@
 use super::*;
 
-// region: client macros
-
-// TODO: If async in traits gets stabilized, consider using that instead.
+// TODO: Remove the following to macros and use `handle_request` method instead.
 #[allow(unused_macros)]
 macro_rules! impl_del {
     ($typ:ident < $( $gen:tt ),+ >) => {
@@ -52,122 +50,6 @@ macro_rules! impl_get {
     };
 }
 pub(crate) use impl_get;
-
-macro_rules! impl_post {
-    // A POST that only has a path parameter (e.g., fine-tunes cancel endpoint)
-    ($strct:ident < $( $type_state:tt ),+ >) => {
-        impl<'a> $strct<$($type_state),*> {
-            /// Executes the `POST` request. Returns a `Result` with either a `reqwest::Response` or an
-            /// `OairsError`.
-            pub async fn send(&self) ->  Result<reqwest::Response, OairsError> {
-                let client = match build_client(&self.key) {
-                    Ok(c) => c,
-                    Err(e) => return Err(e),
-                };
-
-                let url = self.url.clone().unwrap();
-
-                match client
-                    .post(&url)
-                    .send()
-                    .await
-                {
-                    Ok(r) => Ok(r),
-                    Err(e) => Err(parse_reqwest_error(e)),
-                }
-            }
-        }
-    };
-    // POST that has a request body. There is some arbitrariness in the pattern matching here
-    // to distinguish a post that has no request body vs. one with a body
-    ($strct:ident < $( $type_state:tt ),+ >, $cont_type:expr) => {
-        impl<'a> $strct<$($type_state),*> {
-            /// Executes the `POST` request. Returns a `Result` with either a `reqwest::Response` or an
-            /// `OairsError`.
-            pub async fn send(&self) -> Result<reqwest::Response, OairsError> {
-                let client = match build_client(&self.key) {
-                    Ok(c) => c,
-                    Err(e) => return Err(e),
-                };
-
-                let response = match client
-                    .post(self.url.to_string())
-                    .header("Content-Type", $cont_type.to_str())
-                    .json(self)
-                    .send()
-                    .await
-                {
-                    Ok(r) => r,
-                    Err(e) => return Err(parse_reqwest_error(e)),
-                };
-
-                let sc = response.status();
-
-                match sc {
-                    reqwest::StatusCode::OK => Ok(response),
-                    _ => Err(parse_api_error(response, sc).await),
-                }
-            }
-        }
-    }
-}
-pub(crate) use impl_post;
-
-// Currently only one endpoint uses a form, therefore, no reason for a generic macro.
-// However, if more endpoints use forms in the future, this macro can be used to
-// generate the code for them. ...
-#[allow(unused_macros)]
-macro_rules! impl_post_form {
-    ($strct:ident < $( $type_state:tt ),+ >) => {
-        impl<'a> $strct<$($type_state),*> {
-            /// Executes the `POST` request. Returns a `Result` with either a `reqwest::Response` or an
-            /// `OairsError`.
-            pub async fn post_form(&self) -> Result<reqwest::Response, OairsError> {
-                let path = self.file;
-                let purpose = self.purpose.clone();
-
-                let file = match std::fs::read(path) {
-                    Ok(f) => f,
-                    Err(e) => {
-                        return Err(
-                            OairsError::new(
-                                format!("Error reading file: {e}"),
-                                ErrorType::FileError,
-                                Some(format!("{}, {}", path, purpose.to_string())),
-                                None,
-                        ))
-                    }
-                };
-
-                let path = path.to_string();
-                let file_part = reqwest::multipart::Part::bytes(file).file_name(path);
-
-                let form = reqwest::multipart::Form::new()
-                    .text("purpose", purpose.to_string())
-                    .part("file", file_part);
-
-                let client = match build_client(&self.key) {
-                    Ok(c) => c,
-                    Err(e) => return Err(e),
-                };
-
-                match client
-                    .post(&self.url)
-                    .header("Content-Type", "multipart/form-data")
-                    .multipart(form)
-                    .send()
-                    .await
-                {
-                    Ok(r) => Ok(r),
-                    Err(e) => Err(parse_reqwest_error(e)),
-                }
-            }
-        }
-    }
-}
-pub(crate) use impl_post_form;
-
-// endregion: client macros
 
 // region: model macros
 

@@ -1371,6 +1371,7 @@ dependencies = [
  "once_cell",
  "parking_lot 0.12.1",
  "polars",
+ "rayon",
  "reqwest",
  "rustc-hash",
  "save_json",

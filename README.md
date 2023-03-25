@@ -4,8 +4,6 @@ A Rust library for working with the OpenAI API.
 
 Endpoints not currently covered:
 
-* <https://api.openai.com/v1/images/edits> (create image edit)
-* <https://api.openai.com/v1/images/variations> (create image variation)
 * <https://api.openai.com/v1/audio/transcription> (create transcription)
 * <https://api.openai.com/v1/audio/translations> (Create translation)
 
@@ -20,7 +18,7 @@ The main point of entry for working with the API is the `Client` struct. The typ
 let client = Client::new(...);
 ```
 
-This returns `Client<Unkeyed>` which you can use to access each resource or endpoint. Any parameters that are required by the API will be required arguments to the method:
+This returns `Client<Keyed>` which you can use to access each resource or endpoint. Any parameters that are required by the API will be required arguments to the method:
 
 ```rust
 let model = CompletionModel::TextDavinci003;

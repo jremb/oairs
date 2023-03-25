@@ -2,11 +2,17 @@ use super::*;
 
 /// The format of the response. Either `url` or `base64` json.
 /// The default is `url`.
-#[derive(Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub enum ResponseFormat {
     #[default]
     Url,
     Base64,
+}
+
+impl std::fmt::Display for ResponseFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_str())
+    }
 }
 
 impl Serialize for ResponseFormat {

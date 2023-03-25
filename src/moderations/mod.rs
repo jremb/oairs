@@ -3,6 +3,8 @@ pub use builder::*;
 use super::*;
 
 mod builder {
+    use crate::client::handle_request;
+
     use super::*;
 
     #[derive(Debug, Default, Serialize, Deserialize)]
@@ -37,9 +39,19 @@ mod builder {
             self.model = model;
             self
         }
-    }
 
-    impl_post!(ModerationBuilder<Sendable>, ContentType::Json);
+        pub async fn send(&self) -> Result<reqwest::Response, OairsError> {
+            let json = serde_json::to_value(self).unwrap();
+            handle_request(
+                &self.key,
+                &self.url,
+                client::HttpMethod::Post,
+                Some(json),
+                None,
+            )
+            .await
+        }
+    }
 }
 
 pub mod moderations_response {

@@ -1,3 +1,14 @@
+// JREMB:
+//
+// https://openaipublic.blob.core.windows.net/gpt-2/encodings/main/vocab.bpe
+// https://openaipublic.blob.core.windows.net/gpt-2/encodings/main/encoder.json
+// https://openaipublic.blob.core.windows.net/encodings/r50k_base.tiktoken
+// https://openaipublic.blob.core.windows.net/encodings/p50k_base.tiktoken
+// https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken
+//
+// These are the sources for the files in ./assets dir, which were originally
+// downloaded by zurawiki version (I believe).
+
 pub const ENDOFTEXT: &str = "<|endoftext|>";
 pub const FIM_PREFIX: &str = "<|fim_prefix|>";
 pub const FIM_MIDDLE: &str = "<|fim_middle|>";

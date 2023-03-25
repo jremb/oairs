@@ -1,15 +1,67 @@
-//! Not every model is represented as an Enum variant. This is due to several factors: some ambiguity in the API
-//! documentation, where it's not entirely clear which models are accepted by which endpoints, some models being
-//! marked for depreciation, and custom/fine-tuned models.
+//! Not every model is represented as an Enum variant. This is due to several factors: some
+//! ambiguity in the API documentation, where it's not entirely clear which models are accepted
+//! by which endpoints, some models being marked for depreciation, and custom/fine-tuned models.
 //!
 //! In order to accommodate these cases, there are two macros, each of which (currently) does the
-//! same thing, but which suggest a different use case conceptually: [`custom_model!`] and [`ft_model!`].
-//! See the documentation for those macros for more information.
+//! same thing, but which suggest a different use case conceptually: [`custom_model!`] and
+//! [`ft_model!`]. See the documentation for those macros for more information.
 
 use super::*;
 
-// Some of the models have a default, where I think there's an obvious choice. Default is implement instead of
-// deriving it because the enums are non-exhaustive.
+// Some of the models have a default, where I think there's an obvious choice. Default is
+// implement instead of deriving it because the enums are non-exhaustive.
+
+// ========================== //
+//        AudioModel          //
+// ========================== //
+
+#[non_exhaustive]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub enum AudioModel {
+    Whisper1,
+}
+
+impl std::fmt::Display for AudioModel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            AudioModel::Whisper1 => write!(f, "whisper-1"),
+        }
+    }
+}
+
+impl std::str::FromStr for AudioModel {
+    type Err = OairsError;
+
+    #[track_caller]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "whisper-1" => Ok(AudioModel::Whisper1),
+            _ => Err(OairsError::new(
+                format!("No AudioModel variant: {s}"),
+                ErrorType::DeserializationError,
+                Some(s.to_string()),
+                None,
+            )),
+        }
+    }
+}
+
+impl Serialize for AudioModel {
+    fn serialize<Ser>(&self, serializer: Ser) -> Result<Ser::Ok, Ser::Error>
+    where
+        Ser: Serializer,
+    {
+        serializer.serialize_str(self.to_str())
+    }
+}
+
+impl RetrievableModel for AudioModel {
+    fn to_str(&self) -> &str {
+        match self {
+            AudioModel::Whisper1 => "whisper-1",
+        }
+    }
+}
 
 // ========================== //
 //        EditModel           //
@@ -93,6 +145,7 @@ impl EditModel {
 pub enum ChatModel {
     GptTurbo,
     GptTurbo0301,
+    Gpt4,
     Gpt40314,
 }
 
@@ -107,6 +160,7 @@ impl std::fmt::Display for ChatModel {
         match self {
             ChatModel::GptTurbo => write!(f, "gpt-3.5-turbo"),
             ChatModel::GptTurbo0301 => write!(f, "gpt-3.5-turbo-0301"),
+            ChatModel::Gpt4 => write!(f, "gpt-4"),
             ChatModel::Gpt40314 => write!(f, "gpt-4-0314"),
         }
     }
@@ -120,6 +174,7 @@ impl std::str::FromStr for ChatModel {
         match s {
             "gpt-3.5-turbo" => Ok(ChatModel::GptTurbo),
             "gpt-3.5-turbo-0301" => Ok(ChatModel::GptTurbo0301),
+            "gpt-4" => Ok(ChatModel::Gpt4),
             "gpt-4-0314" => Ok(ChatModel::Gpt40314),
             _ => Err(OairsError::new(
                 format!("No ModelChatCompletionsv1 variant: {s}"),
@@ -145,6 +200,7 @@ impl RetrievableModel for ChatModel {
         match self {
             ChatModel::GptTurbo => "gpt-3.5-turbo",
             ChatModel::GptTurbo0301 => "gpt-3.5-turbo-0301",
+            ChatModel::Gpt4 => "gpt-4",
             ChatModel::Gpt40314 => "gpt-4-0314",
         }
     }
@@ -152,9 +208,11 @@ impl RetrievableModel for ChatModel {
 
 impl ChatModel {
     /// For convenience of, e.g., iterating over all models: `for m in ChatModel::ALL.iter()`
-    pub const ALL: [ChatModel; 3] = [
+    /// or to get vector of all models: `EditModel::ALL.to_vec()`
+    pub const ALL: [ChatModel; 4] = [
         ChatModel::GptTurbo,
         ChatModel::GptTurbo0301,
+        ChatModel::Gpt4,
         ChatModel::Gpt40314,
     ];
 }
@@ -405,6 +463,7 @@ impl RetrievableModel for EmbeddingModel {
 
 impl EmbeddingModel {
     /// For convenience of, e.g., iterating over all models: `for m in EmbeddingModel::ALL.iter()`
+    /// or to get vector of all models: `EditModel::ALL.to_vec()`
     pub const ALL: [EmbeddingModel; 6] = [
         EmbeddingModel::TextEmbeddingAda002,
         EmbeddingModel::TextSearchAdaDoc001,
@@ -475,6 +534,17 @@ impl Serialize for FineTuneModel {
     {
         serializer.serialize_str(self.to_str())
     }
+}
+
+impl FineTuneModel {
+    /// For convenience of, e.g., iterating over all models: `for m in FineTuneModel::ALL.iter()`
+    /// or to get vector of all models: `EditModel::ALL.to_vec()`
+    pub const ALL: [FineTuneModel; 4] = [
+        FineTuneModel::Ada,
+        FineTuneModel::Babbage,
+        FineTuneModel::Curie,
+        FineTuneModel::Davinci,
+    ];
 }
 
 impl RetrievableModel for FineTuneModel {

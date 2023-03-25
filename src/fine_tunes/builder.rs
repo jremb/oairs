@@ -1,3 +1,5 @@
+use crate::client::{handle_request, HttpMethod};
+
 use super::*;
 
 #[derive(Default, Serialize)]
@@ -5,7 +7,7 @@ pub struct FineTunesBuilder<'a, State = Buildable> {
     #[serde(skip)]
     key: String,
     #[serde(skip)]
-    url: &'static str,
+    url: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     training_file: Option<&'a str>,
@@ -87,7 +89,7 @@ impl<'a> FineTunesBuilder<'a, Buildable> {
     ) -> FineTunesBuilder<'a, Sendable> {
         FineTunesBuilder {
             key: key.into(),
-            url: URL.get(&Uri::FineTunes).unwrap(),
+            url: create_ft_url().to_string(),
             training_file: Some(training_file_id),
             ..Default::default()
         }
@@ -221,9 +223,12 @@ impl<'a> FineTunesBuilder<'a, Sendable> {
         self.suffix = Some(suffix);
         self
     }
-}
 
-impl_post!(FineTunesBuilder<'_, Sendable>, ContentType::Json);
+    pub async fn send(&self) -> Result<reqwest::Response, OairsError> {
+        let json = serde_json::to_value(&self).unwrap();
+        handle_request(&self.key, &self.url, HttpMethod::Post, Some(json), None).await
+    }
+}
 
 #[derive(Default, Serialize)]
 pub struct ListEventsBuilder<State = Buildable> {
@@ -240,7 +245,7 @@ impl ListEventsBuilder<Buildable> {
     pub fn new(key: &str, ft_id: &str) -> ListEventsBuilder<Sendable> {
         ListEventsBuilder {
             key: key.to_string(),
-            url: list_ft_events_url(ft_id),
+            url: list_ft_events_url(ft_id).to_string(),
             stream: false,
             state: PhantomData::<Sendable>,
         }
