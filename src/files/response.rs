@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use tokio::{
-    fs::{File, OpenOptions},
+    fs::OpenOptions,
     io::AsyncWriteExt,
 };
 

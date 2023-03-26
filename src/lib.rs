@@ -1,7 +1,6 @@
 #![doc = include_str!("../README.md")]
 
 use std::{
-    borrow::{Borrow, Cow},
     collections::HashMap,
     marker::PhantomData,
 };

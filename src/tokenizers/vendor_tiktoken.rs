@@ -178,6 +178,7 @@ fn hash_current_thread() -> usize {
 }
 
 const MAX_NUM_THREADS: usize = 128;
+
 #[derive(Clone)]
 pub struct CoreBPE {
     encoder: HashMap<Vec<u8>, usize>,
@@ -558,7 +559,7 @@ impl CoreBPE {
     //     (tokens, py_completions).into_py(py)
     // }
 
-    fn encode_single_token(&self, piece: &[u8]) -> Option<usize> {
+    pub fn encode_single_token(&self, piece: &[u8]) -> Option<usize> {
         if let Some(token) = self.encoder.get(piece).copied() {
             return Some(token);
         }
