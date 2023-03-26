@@ -83,7 +83,7 @@ pub(crate) static URL: Lazy<HashMap<Uri, &str>> = Lazy::new(|| {
 // TODO: Need to read about Cow and see if it would be a better choice, but the following works for now.
 
 // https://api.openai.com/v1/fine-tunes/{fine_tune_id}/cancel
-pub(crate) fn cancel_ft_url<'a>(ft_id: &str) -> String {
+pub(crate) fn cancel_ft_url(ft_id: &str) -> String {
     format!("{}/{}/cancel", create_ft_url(), ft_id)
 }
 
@@ -99,23 +99,23 @@ pub(crate) fn create_ft_url<'a>() -> &'a str {
     Uri::FineTunes.get()
 }
 
-pub(crate) fn delete_file_url<'a>(file_id: &str) -> String {
+pub(crate) fn delete_file_url(file_id: &str) -> String {
     retrieve_file_url(file_id)
 }
 
-pub(crate) fn delete_ft_model_url<'a>(model: &str) -> String {
+pub(crate) fn delete_ft_model_url(model: &str) -> String {
     format!("{}/{}", Uri::Models.get(), model)
 }
 
-pub(crate) fn img_create_url<'a>() -> String {
+pub(crate) fn img_create_url() -> String {
     format!("{}/generations", URL.get(&Uri::Images).unwrap())
 }
 
-pub(crate) fn img_edit_url<'a>() -> String {
+pub(crate) fn img_edit_url() -> String {
     format!("{}/edits", URL.get(&Uri::Images).unwrap())
 }
 
-pub(crate) fn img_variation_url<'a>() -> String {
+pub(crate) fn img_variation_url() -> String {
     format!("{}/variations", URL.get(&Uri::Images).unwrap())
 }
 
