@@ -1,3 +1,5 @@
+// TODO: Clean up type-state pattern!
+
 use serde::ser::SerializeSeq;
 
 use super::{response::ChatCompletion, *};

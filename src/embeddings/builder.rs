@@ -4,6 +4,8 @@ use crate::client::handle_request;
 
 use super::*;
 
+// TODO: Clean up type-state pattern!
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EmbeddingBuilder<State = Sendable> {
     #[serde(skip)]

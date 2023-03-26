@@ -10,7 +10,7 @@ pub use chat_parsers::*;
 pub mod chat_parsers {
     use super::*;
 
-    /// Uses `nom` to attempt to parse out the `role` field from a server-sent stream.
+    /// Uses [`nom`] to attempt to parse out the `role` field from a server-sent stream.
     ///
     /// # Returns
     /// `(input, role)` where `role` will be a `&[u8]` representation of the role object
@@ -30,7 +30,7 @@ pub mod chat_parsers {
         take_until(",")(input)
     }
 
-    /// Uses `nom` to attempt to parse out only the `role` field from a server-sent stream.
+    /// Uses [`nom`] to attempt to parse out only the `role` field from a server-sent stream.
     ///
     /// # Returns
     /// `(input, role_value)` where `role` will be a `&[u8]` representation of the value for the
@@ -44,7 +44,7 @@ pub mod chat_parsers {
         take_until("\"}")(role_start)
     }
 
-    /// Uses `nom` to attempt to parse out the `content` field from a server-sent stream.
+    /// Uses [`nom`] to attempt to parse out the `content` object from a server-sent stream.
     ///
     /// # Returns
     /// `(input, content)` where `content` will be a `&[u8]` representation of the content object
@@ -52,6 +52,14 @@ pub mod chat_parsers {
     ///
     /// # Fails
     /// Returns an `Err::Incomplete` if the `content` field is not present.
+    /// 
+    /// # Example
+    /// ```rust
+    /// // Part of a server-sent event:
+    /// let slice = b"data: {\"id\":\"chatcmpl-6sKy7POpwtespFLK7OTQCCwNeRIZv\",\"object\":\"chat.completion.chunk\",\"created\":1678408335,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{\"content\":\"Hello\"},\"index\":0,\"finish_reason\":null}]}";
+    /// let (_, content) = nom_content(slice).unwrap();
+    /// assert_eq!(content, b"{\"content\": \"Hello\"}");
+    /// ```
     pub fn nom_content(input: &[u8]) -> IResult<&[u8], &[u8]> {
         let (input, _) = take_until("{\"content")(input)?;
         take_until(",")(input)
@@ -74,7 +82,7 @@ pub mod chat_parsers {
         take_until("\"")(content_start)
     }
 
-    /// Uses `nom` to attempt to parse out `[DONE]` from a server-sent stream. This
+    /// Uses [`nom`] to attempt to parse out `[DONE]` from a server-sent stream. This
     /// will consume any bytes that precede `[DONE]` in the `input`, so it is important to
     /// ensure that you don't need to process any data that might accompany a chunk with
     /// `b"[DONE]"` in it.
@@ -99,6 +107,30 @@ pub mod chat_parsers {
         }
     }
 
+    /// Uses [`nom`] to attempt to parse out a single chat completion chunk from a server-sent 
+    /// event.
+    /// 
+    /// # Returns
+    /// `(remaining, completion_chunk)` where `completion_chunk` will be a `&[u8]` representation
+    /// of the completion chunk object and `remaining` will be any remaining slice from the input. 
+    /// 
+    /// # Fails
+    /// 
+    /// Returns an `Err<Error<&[u8]>>` with the message 'Parsing requires more data' if no chat 
+    /// completion chunk in input. (You can use this to determine when to break out of a loop)
+    /// 
+    /// # Example
+    /// ```rust
+    /// // A server-sent event with two chat completion chunks:
+    /// let server_sent_event = b"data: {\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n";
+    /// let (remaining, completion_chunk) = nom_chat_completion_chunk(server_sent_event).unwrap();
+    /// 
+    /// let expected_remaining = b"\n\ndata: {\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n";
+    /// let expected_chunk = b"{\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}";
+    ///
+    /// assert_eq!(remaining, expected_remaining);
+    /// assert_eq!(completion_chunk, expected_chunk);
+    /// ```
     pub fn nom_chat_completion_chunk(input: &[u8]) -> IResult<&[u8], &[u8]> {
         let (obj_start, _) = take_until("{")(input)?;
         let (input, obj) = take_until("\n")(obj_start)?;
@@ -109,8 +141,6 @@ pub mod chat_parsers {
 
 #[cfg(test)]
 mod tests {
-
-    use crate::completions::Role;
 
     use super::*;
 
@@ -132,201 +162,76 @@ mod tests {
 
     #[test]
     fn test_nom_chat_completion_chunk() {
-        let slice = no_delta().as_ref();
+        let mut slice = no_delta().as_ref();
         match nom_chat_completion_chunk(slice) {
             Ok((remaining, chunk)) => {
-                println!("remaining: {:?}", remaining);
-                println!("chunk: {:?}", chunk);
-                assert_eq!(remaining, b"");
-                assert_eq!(chunk, b"{\"id\":\"chatcmpl-6sKy7POpwtespFLK7OTQCCwNeRIZv\",\"object\":\"chat.completion.chunk\",\"created\":1678408335,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{\"role\":\"assistant\"},\"index\":0,\"finish_reason\":null}]}\n\n");
+                let expected_remaining = b"\n\ndata: {\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n";
+                let expected_chunk = b"{\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}";
+
+                assert_eq!(remaining, expected_remaining);
+                assert_eq!(chunk, expected_chunk);
             }
             Err(e) => {
-                dbg!(e);
+                panic!("{e}");
             }
         }
-    }
 
-    #[test]
-    fn test_nom_unit() {
-        let mut slice = complete_response().as_ref();
-        let mut msg = vec![];
-        let mut last_obj: Option<&[u8]> = None;
-        let loop_count = 0;
-        loop {
-            println!("loop_count: {}", loop_count);
+        let expecting_first = b"{\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}";
+        let expecting_second = b"{\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}";
+        
+        let mut c = 0;
+        loop
+        {
             match nom_chat_completion_chunk(slice) {
                 Ok((remaining, chunk)) => {
                     slice = remaining;
-                    last_obj = Some(chunk);
-                    match nom_content_value(&chunk) {
-                        Ok((_, content)) => {
-                            let content_str = String::from_utf8(content.to_vec()).unwrap();
-                            msg.push(content_str);
-                        }
-                        Err(e) => {
-                            if e.is_incomplete() {
-                                ()
-                            } else {
-                                dbg!(e);
-                            }
-                        }
+                    if c == 0 {
+                        assert_eq!(chunk, expecting_first);
+                    } else if c == 1 {
+                        assert_eq!(chunk, expecting_second);
+                    } else {
+                        panic!("Should not have gotten here");
                     }
                 }
                 Err(e) => {
-                    if e.is_incomplete() {
+                    if e.to_string() == "Parsing requires more data" {
                         break;
-                    } else {
-                        dbg!(e);
                     }
+                    panic!("{e}")
                 }
-            };
-        }
-        let last_obj_str = String::from_utf8(last_obj.unwrap().to_vec()).unwrap();
-        println!("last_obj: {:?}", last_obj_str);
-
-        let msg = msg.join("");
-        println!("msg: {:?}", msg);
-    }
-
-    #[test]
-    fn test_nom_response_chunk() {
-        let mut slice = complete_response().as_ref();
-        let mut count = 0;
-        loop {
-            let mut right;
-            match nom_chat_completion_chunk(slice) {
-                Ok((l, r)) => {
-                    slice = l;
-                    right = r;
-                    let right_str = String::from_utf8(right.to_vec()).unwrap();
-                    println!("right: {:?}", right_str);
-                }
-                Err(e) => {
-                    if e.is_incomplete() {
-                        break;
-                    } else {
-                        dbg!(e);
-                    }
-                }
-            };
-            // let left = String::from_utf8(slice.to_vec()).unwrap();
-
-            // println!("left: {:?}", left);
-
-            println!("");
-
-            // count += 1;
-            // if count == 10 {
-            //     break;
-            // }
+            }
+            c += 1;
         }
     }
 
     #[test]
-    fn test_nom_content_til_done() {
-        let mut slice = some_delta().as_ref();
-        loop {
-            match nom_content_value(slice) {
-                Ok(r) => {
-                    slice = r.0;
-                    let content = match String::from_utf8(r.1.to_vec()) {
-                        Ok(s) => s,
-                        Err(e) => {
-                            return {
-                                dbg!(e.to_string());
-                            };
-                        }
-                    };
-                    println!("{}", content);
-                }
-                Err(e) => {
-                    if e.is_incomplete() {
-                        break;
-                    } else {
-                        dbg!(e);
-                    }
-                }
-            };
-        }
-        match nom_til_done(slice) {
-            Ok(r) => {
-                slice = r.0;
-                let content = match String::from_utf8(r.1.to_vec()) {
-                    Ok(s) => s,
-                    Err(e) => {
-                        return {
-                            dbg!(e.to_string());
-                        };
-                    }
-                };
-                println!("{}", content);
-            }
-            Err(e) => {
-                if e.is_incomplete() {
-                    let e_string = match String::from_utf8(e.to_string().into_bytes()) {
-                        Ok(s) => s,
-                        Err(e) => {
-                            return {
-                                dbg!(e.to_string());
-                            };
-                        }
-                    };
-                    println!("incomplete: {e}");
-                } else {
-                    dbg!(e);
-                }
-            }
-        }
-        // let slice = String::from_utf8(slice.to_vec()).unwrap();
-        // println!("\nleftover slice: {:?}", slice);
+    fn test_nom_is_done() {
+        let slice = no_delta().as_ref();
+        assert!(nom_is_done(slice));
+
+        let slice = some_delta().as_ref();
+        assert!(!nom_is_done(slice));
     }
 
     #[test]
     fn test_nom_content() {
-        let input = some_delta();
-        let (input, content) = match nom_content(input) {
-            Ok((input, content)) => (input, content),
-            Err(e) => panic!("nom_content failed: {:?}", e),
-        };
+        let slice = some_delta().as_ref();
+        let (_, content) = nom_content(slice).unwrap();
+        assert_eq!(content, b"{\"content\":\"Hello\"}");
 
-        let content = String::from_utf8(content.to_vec()).unwrap();
-        dbg!(&content);
-    }
+        let slice = complete_response().as_ref();
+        let (_, content) = nom_content(slice).unwrap();
+        assert_eq!(content, b"{\"content\":\"Is\"}");
 
-    #[test]
-    fn test_nom_content_value() {
-        let input = some_delta();
-        let (input, content_value) = match nom_content_value(input) {
-            Ok((input, content_value)) => (input, content_value),
-            Err(e) => panic!("nom_content_value failed: {:?}", e),
-        };
-
-        let content = String::from_utf8(content_value.to_vec()).unwrap();
-        dbg!(&content);
-    }
-
-    #[test]
-    fn test_nom_role() {
-        let input = complete_response();
-        let (input, role) = match nom_role(input) {
-            Ok((input, role)) => (input, role),
-            Err(e) => panic!("nom_role failed: {:?}", e),
-        };
-
-        let role: Role = Role::from_slice(role).unwrap();
-        dbg!(&role);
-    }
-
-    #[test]
-    fn test_nom_role_value() {
-        let input = complete_response();
-
-        let (input, role_value) = match nom_role_value(input) {
-            Ok((input, role)) => (input, role),
-            Err(e) => panic!("nom_role failed: {:?}", e),
-        };
-
-        let role = String::from_utf8(role_value.to_vec()).unwrap();
-        dbg!(&role);
+        let slice = no_delta().as_ref();
+        match nom_content(slice) {
+            Ok(_) => {
+                panic!("Should not have gotten here");
+            }
+            Err(e) => {
+                let expected = "Parsing requires more data";
+                assert_eq!(e.to_string(), expected);
+            }
+        }
     }
 }

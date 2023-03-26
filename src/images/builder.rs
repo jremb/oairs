@@ -1,3 +1,5 @@
+// TODO: Clean up type-state pattern!
+
 use reqwest::multipart::Form;
 
 use crate::{

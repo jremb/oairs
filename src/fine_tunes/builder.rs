@@ -1,3 +1,5 @@
+// TODO: Clean up type-state pattern!
+
 use crate::client::{handle_request, HttpMethod};
 
 use super::*;

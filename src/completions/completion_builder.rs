@@ -2,6 +2,8 @@
 //! responsible for building the request. [`Temperature`], [`TopP`] and [`LogProbs`] are necessary for
 //! properly setting their respective parameters (the former two also being used by [`ChatBuilder`]).
 
+// TODO: Clean up type-state pattern!
+
 use crate::client::handle_request;
 
 use super::*;
