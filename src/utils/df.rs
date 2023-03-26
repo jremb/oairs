@@ -50,14 +50,12 @@ fn df_from_string(s: String, has_headers: bool) -> Result<DataFrame, OairsError>
 
     match CsvReader::new(cur).has_header(has_headers).finish() {
         Ok(df) => Ok(df),
-        Err(e) => {
-            return Err(OairsError::new(
-                e.to_string(),
-                ErrorType::PolarsError,
-                None,
-                None,
-            ))
-        }
+        Err(e) => Err(OairsError::new(
+            e.to_string(),
+            ErrorType::PolarsError,
+            None,
+            None,
+        )),
     }
 }
 
@@ -101,13 +99,11 @@ pub fn write_csv(df: &mut DataFrame, path: &str) -> Result<(), OairsError> {
     let mut file = std::fs::File::create(&path)?;
     match CsvWriter::new(&mut file).finish(df) {
         Ok(_) => Ok(()),
-        Err(e) => {
-            return Err(OairsError::new(
-                e.to_string(),
-                ErrorType::PolarsError,
-                Some(path.to_string()),
-                None,
-            ))
-        }
+        Err(e) => Err(OairsError::new(
+            e.to_string(),
+            ErrorType::PolarsError,
+            Some(path),
+            None,
+        )),
     }
 }

@@ -52,7 +52,7 @@ pub mod chat_parsers {
     ///
     /// # Fails
     /// Returns an `Err::Incomplete` if the `content` field is not present.
-    /// 
+    ///
     /// # Example
     /// ```rust
     /// // Part of a server-sent event:
@@ -107,24 +107,24 @@ pub mod chat_parsers {
         }
     }
 
-    /// Uses [`nom`] to attempt to parse out a single chat completion chunk from a server-sent 
+    /// Uses [`nom`] to attempt to parse out a single chat completion chunk from a server-sent
     /// event.
-    /// 
+    ///
     /// # Returns
     /// `(remaining, completion_chunk)` where `completion_chunk` will be a `&[u8]` representation
-    /// of the completion chunk object and `remaining` will be any remaining slice from the input. 
-    /// 
+    /// of the completion chunk object and `remaining` will be any remaining slice from the input.
+    ///
     /// # Fails
-    /// 
-    /// Returns an `Err<Error<&[u8]>>` with the message 'Parsing requires more data' if no chat 
+    ///
+    /// Returns an `Err<Error<&[u8]>>` with the message 'Parsing requires more data' if no chat
     /// completion chunk in input. (You can use this to determine when to break out of a loop)
-    /// 
+    ///
     /// # Example
     /// ```rust
     /// // A server-sent event with two chat completion chunks:
     /// let server_sent_event = b"data: {\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n";
     /// let (remaining, completion_chunk) = nom_chat_completion_chunk(server_sent_event).unwrap();
-    /// 
+    ///
     /// let expected_remaining = b"\n\ndata: {\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n";
     /// let expected_chunk = b"{\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}";
     ///
@@ -178,10 +178,9 @@ mod tests {
 
         let expecting_first = b"{\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}";
         let expecting_second = b"{\"id\":\"chatcmpl-6sHKShQDKQCki9wzsdyALS3ublOkh\",\"object\":\"chat.completion.chunk\",\"created\":1678394344,\"model\":\"gpt-3.5-turbo-0301\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\"}]}";
-        
+
         let mut c = 0;
-        loop
-        {
+        loop {
             match nom_chat_completion_chunk(slice) {
                 Ok((remaining, chunk)) => {
                     slice = remaining;

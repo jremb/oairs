@@ -2,10 +2,7 @@
 //! sending a request. The Client struct is the main point of entry for interacting with the
 //! endpoints of the OpenAI API.
 
-use reqwest::{
-    header,
-    multipart::Part,
-};
+use reqwest::{header, multipart::Part};
 
 use crate::{
     completions::{ChatBuilder, CompletionBuilder, Messages},
@@ -1229,7 +1226,7 @@ pub(crate) fn build_client(key: &str) -> Result<reqwest::Client, OairsError> {
         .build()
     {
         Ok(c) => Ok(c),
-        Err(e) => return Err(builder_error(e)),
+        Err(e) => Err(builder_error(e)),
     }
 }
 
@@ -1248,7 +1245,7 @@ pub(crate) fn set_method(
 }
 
 pub(crate) fn get_file_part(path: &str) -> Result<Part, OairsError> {
-    let file = std::fs::read(&path)?;
+    let file = std::fs::read(path)?;
     let file_part = Part::bytes(file).file_name(path.to_string());
 
     Ok(file_part)

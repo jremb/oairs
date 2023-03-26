@@ -45,7 +45,7 @@ impl<'a, Sendable> EmbeddingBuilder<Sendable> {
         let json = serde_json::to_value(self).unwrap();
         handle_request(
             &self.key,
-            &self.url,
+            self.url,
             client::HttpMethod::Post,
             Some(json),
             None,

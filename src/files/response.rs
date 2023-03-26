@@ -1,9 +1,6 @@
 use std::str::FromStr;
 
-use tokio::{
-    fs::OpenOptions,
-    io::AsyncWriteExt,
-};
+use tokio::{fs::OpenOptions, io::AsyncWriteExt};
 
 use super::*;
 

@@ -1,9 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-use std::{
-    collections::HashMap,
-    marker::PhantomData,
-};
+use std::{collections::HashMap, marker::PhantomData};
 
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize, Serializer};

@@ -227,7 +227,7 @@ impl<'a> FineTunesBuilder<'a, Sendable> {
     }
 
     pub async fn send(&self) -> Result<reqwest::Response, OairsError> {
-        let json = serde_json::to_value(&self).unwrap();
+        let json = serde_json::to_value(self).unwrap();
         handle_request(&self.key, &self.url, HttpMethod::Post, Some(json), None).await
     }
 }
@@ -247,7 +247,7 @@ impl ListEventsBuilder<Buildable> {
     pub fn new(key: &str, ft_id: &str) -> ListEventsBuilder<Sendable> {
         ListEventsBuilder {
             key: key.to_string(),
-            url: list_ft_events_url(ft_id).to_string(),
+            url: list_ft_events_url(ft_id),
             stream: false,
             state: PhantomData::<Sendable>,
         }

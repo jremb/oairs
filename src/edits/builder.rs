@@ -66,6 +66,6 @@ impl EditBuilder<Sendable> {
 
     pub async fn send(&self) -> Result<reqwest::Response, OairsError> {
         let json = serde_json::to_value(self).unwrap();
-        handle_request(&self.key, &self.url, HttpMethod::Post, Some(json), None).await
+        handle_request(&self.key, self.url, HttpMethod::Post, Some(json), None).await
     }
 }

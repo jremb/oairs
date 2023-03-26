@@ -409,7 +409,7 @@ impl Language {
         }
     }
 
-    fn to_iso639_1(&self) -> &str {
+    fn as_iso639_1(&self) -> &str {
         match self {
             Language::Abkhazian => "ab",
             Language::Afar => "aa",
